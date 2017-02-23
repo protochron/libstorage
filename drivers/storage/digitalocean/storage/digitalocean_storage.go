@@ -173,9 +173,11 @@ func (d *driver) VolumeRemove(
 			return goof.New("volume already attached")
 		}
 
-		err := d.volumeDetach(volumeID)
-		if err != nil {
-			return err
+		for _, dropletID := range volume.DropletIDs {
+			err := d.volumeDetach(volumeID, dropletID)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
@@ -187,8 +189,8 @@ func (d *driver) VolumeRemove(
 	return nil
 }
 
-func (d *driver) volumeDetach(volumeID string) error {
-	action, _, err := d.client.StorageActions.Detach(volumeID)
+func (d *driver) volumeDetach(volumeID string, dropletID int) error {
+	action, _, err := d.client.StorageActions.DetachByDropletID(volumeID, dropletID)
 	if err != nil {
 		return err
 	}
@@ -213,9 +215,11 @@ func (d *driver) VolumeAttach(
 			return nil, "", goof.New("volume already attached")
 		}
 
-		err = d.volumeDetach(volumeID)
-		if err != nil {
-			return nil, "", err
+		for _, dropletID := range vol.DropletIDs {
+			err = d.volumeDetach(volumeID, dropletID)
+			if err != nil {
+				return nil, "", err
+			}
 		}
 	}
 
@@ -256,9 +260,11 @@ func (d *driver) VolumeDetach(
 		return nil, goof.WithError("volume already detached", err)
 	}
 
-	err = d.volumeDetach(volumeID)
-	if err != nil {
-		return nil, err
+	for _, dropletID := range vol.DropletIDs {
+		err = d.volumeDetach(volumeID, dropletID)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	ctx.Info("detached volume", volumeID)
